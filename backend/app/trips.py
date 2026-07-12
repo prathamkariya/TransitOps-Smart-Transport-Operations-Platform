@@ -94,10 +94,10 @@ class TripService:
             )
 
         # Business Rule 4: Cargo weight must not exceed vehicle's max capacity
-        if trip.cargo_weight > vehicle.max_load:
+        if trip.cargo_weight > vehicle.max_load_capacity:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Cargo weight ({trip.cargo_weight} kg) exceeds vehicle maximum capacity ({vehicle.max_load} kg)"
+                detail=f"Cargo weight ({trip.cargo_weight} kg) exceeds vehicle maximum capacity ({vehicle.max_load_capacity} kg)"
             )
 
         # Transition status
