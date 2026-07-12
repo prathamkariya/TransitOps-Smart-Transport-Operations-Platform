@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Column, Date, DateTime, Enum, Float, Index, Integer, String
 from sqlalchemy.sql import func
 
-from ..core.db import Base
+from app.database import Base
 
 
 class DriverStatus(str, enum.Enum):
