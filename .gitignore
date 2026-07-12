@@ -1,36 +1,7 @@
-# Python / Venv
-__pycache__/
-*.py[cod]
-*$py.class
-*.pyo
-.venv/
-venv/
-env/
-.env
-*.env
-
-# Alembic
-backend/alembic/versions/*.pyc
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Node / Frontend
+# gitignore
 node_modules/
-frontend/dist/
-frontend/.vite/
-
-# IDE
-.vscode/
-.idea/
-*.suo
-*.user
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
+__pycache__/
+*.pyc
+.env
+.venv
+dist/
