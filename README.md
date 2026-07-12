@@ -1,6 +1,6 @@
 <div align="center">
-  <!-- Using a live animated GIF from Tenor so it works immediately -->
-  <img src="https://tenor.com/view/one-piece-hat-luffy-hat-luffyhat-onepieceluffyhat-gif-6558192108222740508" width="80" alt="Floating Straw Hat" />
+  <!-- To add your own custom local GIF, replace the src below with './assets/straw-hat.gif' -->
+  <img src="https://media1.tenor.com/m/WwNg-cNi-BwAAAAC/one-piece-hat-luffy-hat.gif" width="80" alt="Floating Straw Hat" />
 
   <h1>🚀 TransitOps: Smart Transport Operations Platform</h1>
 
