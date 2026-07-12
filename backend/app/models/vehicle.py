@@ -1,5 +1,4 @@
 import enum
-<<<<<<< HEAD
 
 from sqlalchemy import Column, DateTime, Enum, Float, Index, Integer, String
 from sqlalchemy.sql import func
@@ -8,37 +7,16 @@ from ..core.db import Base
 
 
 class VehicleStatusEnum(str, enum.Enum):
-=======
-from sqlalchemy import Column, Integer, String, Float, Enum as SAEnum, DateTime
-from sqlalchemy.sql import func
-from app.database import Base
-
-
-class VehicleStatus(str, enum.Enum):
->>>>>>> origin/main
     available = "available"
     on_trip = "on_trip"
     in_shop = "in_shop"
     retired = "retired"
 
 
-<<<<<<< HEAD
-=======
-class VehicleType(str, enum.Enum):
-    truck = "truck"
-    van = "van"
-    sedan = "sedan"
-    bus = "bus"
-    motorcycle = "motorcycle"
-    other = "other"
-
-
->>>>>>> origin/main
 class Vehicle(Base):
     __tablename__ = "vehicles"
 
     id = Column(Integer, primary_key=True, index=True)
-<<<<<<< HEAD
     reg_number = Column(String, unique=True, nullable=False)
     model_name = Column(String, nullable=False)
     type = Column(String, nullable=False)
@@ -65,17 +43,3 @@ class Vehicle(Base):
         Index("ix_vehicles_status", "status"),
         Index("ix_vehicles_region", "region"),
     )
-=======
-    reg_number = Column(String, unique=True, nullable=False, index=True)
-    model = Column(String, nullable=False)
-    type = Column(String, nullable=False)  # free-form string for flexibility
-    max_load = Column(Float, nullable=False)            # tonnes
-    odometer = Column(Float, default=0.0)               # km
-    acquisition_cost = Column(Float, nullable=False)    # currency units
-    status = Column(
-        SAEnum(VehicleStatus, name="vehiclestatus", create_type=False),
-        default=VehicleStatus.available,
-        nullable=False,
-    )
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
->>>>>>> origin/main
