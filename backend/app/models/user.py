@@ -6,7 +6,7 @@ from app.database import Base
 
 class UserRole(str, enum.Enum):
     fleet_manager = "fleet_manager"
-    driver = "driver"
+    dispatcher = "dispatcher"
     safety_officer = "safety_officer"
     financial_analyst = "financial_analyst"
 
@@ -15,6 +15,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=True)          # display name
     email = Column(String, unique=True, nullable=False, index=True)
     password_hash = Column(String, nullable=False)
     role = Column(SAEnum(UserRole, name="userrole", create_type=False), nullable=False)
