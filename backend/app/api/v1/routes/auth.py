@@ -1,24 +1,59 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from ..core import db, security
-from ..schemas import Token, UserCreate, UserResponse
-from ..services import auth as auth_service
+from email_validator import validate_email, EmailNotValidError
+
+from app.core import security
+from app.core.db import get_db
+from app.models.user import User
+from app.schemas import Token, UserResponse
+from app.api.deps import get_current_user
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserResponse)
-def register(user: UserCreate, db_session: Session = Depends(db.get_db)):
-    return auth_service.create_user(db_session, user)
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db_session: Session = Depends(db.get_db)):
-    user = auth_service.get_user_by_email(db_session, form_data.username)
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    """
+    Authenticate with email + password.
+    Returns a JWT access token (expires in 8 hours).
+    """
+    # Explicitly validate the email format (FastAPI's form data doesn't do this by default)
+    try:
+        validate_email(form_data.username, check_deliverability=False)
+    except EmailNotValidError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid email format: {str(e)}"
+        )
+
+    user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not security.verify_password(form_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = security.create_access_token(data={"sub": user.email})
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated",
+        )
+
+    access_token = security.create_access_token(
+        user_id=user.id,
+        role=user.role.value,
+    )
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    """
+    Returns the currently authenticated user's profile.
+    Requires a valid JWT in the Authorization header.
+    """
+    return current_user

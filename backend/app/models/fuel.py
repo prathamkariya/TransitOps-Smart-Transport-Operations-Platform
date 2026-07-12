@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, Float, Date, ForeignKey
+from sqlalchemy import Column, Date, Float, ForeignKey, Integer
 from sqlalchemy.orm import relationship
+
 from ..core.db import Base
 
+
 class FuelLog(Base):
+    """Defined by Eng 01. Logic written by Eng 02/03."""
     __tablename__ = "fuel_logs"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -2,34 +2,57 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from ..core import security, config, db
-from ..models import user as user_model
-from ..schemas import TokenData
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login")
+from ..core.config import settings
+from ..core.db import get_db
+from ..models.user import User, RoleEnum
 
-def get_current_user(token: str = Depends(oauth2_scheme), db_session: Session = Depends(db.get_db)):
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    """
+    Decodes the JWT and returns the authenticated User object.
+    'sub' in the token is the user's integer ID (as a string).
+    Role is ALWAYS read from the server-side DB record — not from the token.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, config.settings.SECRET_KEY, algorithms=[config.settings.ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
-        token_data = TokenData(email=email)
-    except JWTError:
+        user_id = int(user_id_str)
+    except (JWTError, ValueError):
         raise credentials_exception
-    user = db_session.query(user_model.User).filter(user_model.User.email == token_data.email).first()
-    if user is None:
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.is_active:
         raise credentials_exception
     return user
 
-def require_role(roles: list[user_model.RoleEnum]):
-    def role_checker(current_user: user_model.User = Depends(get_current_user)):
-        if current_user.role not in roles:
-            raise HTTPException(status_code=403, detail="Not enough permissions")
+
+def require_role(*allowed_roles: RoleEnum):
+    """
+    RBAC dependency — reusable by Eng 02 and Eng 03.
+
+    Usage:
+        @router.post("/vehicles")
+        def create_vehicle(..., user=Depends(require_role(RoleEnum.fleet_manager))):
+            ...
+    """
+    def dependency(current_user: User = Depends(get_current_user)) -> User:
+        if current_user.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not authorized for this action",
+            )
         return current_user
-    return role_checker
+    return dependency
