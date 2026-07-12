@@ -2,7 +2,7 @@ import enum
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, Enum as SAEnum, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.core.db import Base
+from app.database import Base
 
 
 class TripStatus(str, enum.Enum):

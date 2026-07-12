@@ -1,7 +1,7 @@
 import enum
 from sqlalchemy import Column, Integer, String, Float, Enum as SAEnum, DateTime
 from sqlalchemy.sql import func
-from app.core.db import Base
+from app.database import Base
 
 
 class VehicleStatus(str, enum.Enum):
