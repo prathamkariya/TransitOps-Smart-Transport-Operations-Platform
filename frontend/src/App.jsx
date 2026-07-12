@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext } from 'react'
 import { Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom'
 
@@ -437,4 +438,5 @@ export default function App() {
       </AuthProvider>
     </ThemeProvider>
   )
+}
 }

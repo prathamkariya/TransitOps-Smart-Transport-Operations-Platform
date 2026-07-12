@@ -1,7 +1,9 @@
 import enum
-from sqlalchemy import Column, Integer, String, Float, Date, Enum as SAEnum, DateTime
+
+from sqlalchemy import Column, Date, DateTime, Enum, Float, Index, Integer, String
 from sqlalchemy.sql import func
-from app.database import Base
+
+from ..core.db import Base
 
 
 class DriverStatus(str, enum.Enum):
@@ -16,14 +18,26 @@ class Driver(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
-    license_number = Column(String, unique=True, nullable=False, index=True)
-    license_category = Column(String, nullable=False)  # e.g. A, B, C, D, E
+    license_number = Column(String, unique=True, nullable=False)
+    license_category = Column(String, nullable=True)
     license_expiry = Column(Date, nullable=False)
-    contact = Column(String)
-    safety_score = Column(Float, default=100.0)
+    contact_number = Column(String, nullable=True)
+    safety_score = Column(Float, default=100.0, nullable=False)
     status = Column(
-        SAEnum(DriverStatus, name="driverstatus", create_type=False),
+        Enum(DriverStatus),
         default=DriverStatus.available,
         nullable=False,
     )
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    # Explicit indexes for search/filter performance (beyond unique constraint)
+    __table_args__ = (
+        Index("ix_drivers_license_number", "license_number"),
+        Index("ix_drivers_status", "status"),
+    )

@@ -25,11 +25,12 @@ class Vehicle(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     reg_number = Column(String, unique=True, nullable=False, index=True)
-    model = Column(String, nullable=False)
+    model_name = Column(String, nullable=False)
     type = Column(String, nullable=False)  # free-form string for flexibility
-    max_load = Column(Float, nullable=False)            # tonnes
+    max_load_capacity = Column(Float, nullable=False)            # tonnes
     odometer = Column(Float, default=0.0)               # km
     acquisition_cost = Column(Float, nullable=False)    # currency units
+    region = Column(String, nullable=False, default="unknown")
     status = Column(
         SAEnum(VehicleStatus, name="vehiclestatus", create_type=False),
         default=VehicleStatus.available,

@@ -30,6 +30,9 @@ from app.reports import router as reports_router
 from app.trips import trips_router
 from app.maintenance import maintenance_router
 
+from app.api.v1.routes.vehicles import router as my_vehicles_router
+from app.api.v1.routes.drivers import router as my_drivers_router
+
 logger = logging.getLogger("transitops")
 logging.basicConfig(level=logging.INFO)
 
@@ -120,6 +123,10 @@ app.include_router(dashboard_router, prefix=PREFIX)
 app.include_router(reports_router, prefix=PREFIX)
 app.include_router(trips_router, prefix=PREFIX)
 app.include_router(maintenance_router, prefix=PREFIX)
+
+# New Phase 1 endpoints
+app.include_router(my_vehicles_router, prefix=PREFIX + "/vehicles", tags=["Vehicles"])
+app.include_router(my_drivers_router, prefix=PREFIX + "/drivers", tags=["Drivers"])
 
 
 # ── Health ───────────────────────────────────────────────────────────────────
