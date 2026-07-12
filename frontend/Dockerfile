@@ -2,12 +2,16 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files and install dependencies
-COPY package.json package-lock.json* ./
+# Copy package files first to leverage Docker caching
+COPY package*.json ./
+
+# Install dependencies inside the container environment
 RUN npm install
 
-# Copy all project files
+# Copy the rest of the application code
 COPY . .
 
-# Run Vite in dev mode bound to all network interfaces
+EXPOSE 5173
+
+# Start Vite with the external host flag enabled
 CMD ["npm", "run", "dev", "--", "--host"]
