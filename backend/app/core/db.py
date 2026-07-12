@@ -5,7 +5,7 @@ from .config import settings
 
 engine = create_engine(
     settings.DATABASE_URL,
-    pool_pre_ping=True,   # Detects stale connections before use
+    pool_pre_ping=True,
     pool_size=5,
     max_overflow=10,
 )
@@ -21,3 +21,4 @@ def get_db():
         yield db
     finally:
         db.close()
+
