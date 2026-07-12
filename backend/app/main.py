@@ -46,15 +46,45 @@ def _create_enum_types() -> None:
     so we use a DO block that swallows 'duplicate_object' errors.
     """
     enum_ddl = [
-        "DO $$ BEGIN CREATE TYPE userrole AS ENUM ('fleet_manager','driver','safety_officer','financial_analyst'); EXCEPTION WHEN duplicate_object THEN null; END $$",
+        # Create enums with IF NOT EXISTS semantics via DO block
+        "DO $$ BEGIN CREATE TYPE userrole AS ENUM ('fleet_manager','dispatcher','safety_officer','financial_analyst'); EXCEPTION WHEN duplicate_object THEN null; END $$",
+        # If enum already existed with old 'driver' value, add 'dispatcher' safely
+        "DO $$ BEGIN ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'dispatcher'; EXCEPTION WHEN others THEN null; END $$",
         "DO $$ BEGIN CREATE TYPE vehiclestatus AS ENUM ('available','on_trip','in_shop','retired'); EXCEPTION WHEN duplicate_object THEN null; END $$",
         "DO $$ BEGIN CREATE TYPE driverstatus AS ENUM ('available','on_trip','off_duty','suspended'); EXCEPTION WHEN duplicate_object THEN null; END $$",
         "DO $$ BEGIN CREATE TYPE tripstatus AS ENUM ('draft','dispatched','completed','cancelled'); EXCEPTION WHEN duplicate_object THEN null; END $$",
-        "DO $$ BEGIN CREATE TYPE expensetype AS ENUM ('toll','repair','misc'); EXCEPTION WHEN duplicate_object THEN null; END $$",
+        "DO $$ BEGIN CREATE TYPE expensetype AS ENUM ('toll','repair','parking','cleaning','insurance','other','misc'); EXCEPTION WHEN duplicate_object THEN null; END $$",
+        "DO $$ BEGIN ALTER TYPE expensetype ADD VALUE IF NOT EXISTS 'parking'; EXCEPTION WHEN others THEN null; END $$",
+        "DO $$ BEGIN ALTER TYPE expensetype ADD VALUE IF NOT EXISTS 'cleaning'; EXCEPTION WHEN others THEN null; END $$",
+        "DO $$ BEGIN ALTER TYPE expensetype ADD VALUE IF NOT EXISTS 'insurance'; EXCEPTION WHEN others THEN null; END $$",
+        "DO $$ BEGIN ALTER TYPE expensetype ADD VALUE IF NOT EXISTS 'other'; EXCEPTION WHEN others THEN null; END $$",
     ]
     with engine.begin() as conn:
         for stmt in enum_ddl:
             conn.execute(text(stmt))
+
+
+def _patch_existing_tables() -> None:
+    """
+    Safely add columns/values that create_all(checkfirst=True) won't add
+    to tables that already exist.
+    """
+    patches = [
+        # Add 'name' column to users if it doesn't exist yet
+        """
+        DO $$ BEGIN
+            ALTER TABLE users ADD COLUMN name VARCHAR;
+        EXCEPTION WHEN duplicate_column THEN null;
+        END $$
+        """,
+        # Ensure dispatcher value is in the userrole enum
+        # ALTER TYPE ADD VALUE cannot run inside a transaction block in PostgreSQL < 12,
+        # so we use a DO block that catches the error if it already exists
+        """DO $$ BEGIN ALTER TYPE userrole ADD VALUE IF NOT EXISTS 'dispatcher'; EXCEPTION WHEN others THEN null; END $$""",
+    ]
+    with engine.begin() as conn:
+        for sql in patches:
+            conn.execute(text(sql))
 
 
 def setup_database(max_retries: int = 10, delay: float = 3.0) -> None:
@@ -66,6 +96,7 @@ def setup_database(max_retries: int = 10, delay: float = 3.0) -> None:
         try:
             _create_enum_types()
             Base.metadata.create_all(bind=engine, checkfirst=True)
+            _patch_existing_tables()   # ← add columns/values to pre-existing tables
             logger.info("✅ Database schema ready")
             return
         except OperationalError as exc:

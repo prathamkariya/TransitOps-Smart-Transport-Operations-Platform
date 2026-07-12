@@ -16,6 +16,7 @@ class Token(BaseModel):
 
 class UserResponse(BaseModel):
     id: int
+    name: Optional[str] = None
     email: EmailStr
     role: UserRole
     is_active: bool
