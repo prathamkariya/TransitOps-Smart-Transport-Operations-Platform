@@ -97,6 +97,7 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    redirect_slashes=True,
 )
 
 # CORS — allow Vite dev server and any potential production origin
