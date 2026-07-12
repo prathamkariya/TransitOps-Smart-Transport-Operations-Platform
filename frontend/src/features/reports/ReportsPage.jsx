@@ -38,8 +38,8 @@ function FuelEfficiencyReport({ vehicles }) {
     try {
       const params = {}
       if (filters.vehicle_id) params.vehicle_id = filters.vehicle_id
-      if (filters.date_from) params.date_from = filters.date_from
-      if (filters.date_to) params.date_to = filters.date_to
+      if (filters.date_from) params.date_from = new Date(filters.date_from).toISOString().split('T')[0]
+      if (filters.date_to) params.date_to = new Date(filters.date_to).toISOString().split('T')[0]
       const res = await client.get('/reports/fuel-efficiency', { params })
       setRows(res.data)
     } catch { setRows([]) } finally { setLoading(false) }
@@ -105,8 +105,8 @@ function OperationalCostReport({ vehicles }) {
     try {
       const params = {}
       if (filters.vehicle_id) params.vehicle_id = filters.vehicle_id
-      if (filters.date_from) params.date_from = filters.date_from
-      if (filters.date_to) params.date_to = filters.date_to
+      if (filters.date_from) params.date_from = new Date(filters.date_from).toISOString().split('T')[0]
+      if (filters.date_to) params.date_to = new Date(filters.date_to).toISOString().split('T')[0]
       const res = await client.get('/reports/operational-cost', { params })
       setRows(res.data)
     } catch { setRows([]) } finally { setLoading(false) }
