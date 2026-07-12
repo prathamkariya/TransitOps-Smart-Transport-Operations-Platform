@@ -1,10 +1,13 @@
 """
 auth.py — Authentication routes + JWT dependency used by all other modules.
-Eng 01 owns the full implementation; this version is the minimal working
-skeleton needed to unblock Eng 03 routes.
+RBAC roles:
+  fleet_manager   → Fleet (Vehicles), Maintenance            [admin-created only]
+  dispatcher      → Dashboard, Trips                          [self-register]
+  safety_officer  → Drivers, Compliance                       [admin-created only]
+  financial_analyst → Fuel & Expenses, Analytics              [self-register]
 """
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import List, Optional
 
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,7 +18,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.auth import UserCreate, UserResponse, Token
+from app.schemas.auth import (
+    UserCreate, UserAdminCreate, UserResponse, Token, SELF_REGISTER_ROLES,
+)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -40,7 +45,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
 
-# ─── Dependency ─────────────────────────────────────────────────────────────
+# ─── Dependencies ────────────────────────────────────────────────────────────
 
 def get_current_user(
     token: str = Depends(oauth2_scheme),
@@ -78,14 +83,27 @@ def require_role(allowed_roles: list[UserRole]):
     return _check
 
 
-# ─── Routes ─────────────────────────────────────────────────────────────────
+# ─── Public Routes ───────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """
+    Self-registration endpoint — restricted to dispatcher and financial_analyst.
+    fleet_manager and safety_officer must be created by a fleet_manager admin.
+    """
+    if user_data.role not in SELF_REGISTER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=(
+                f"Role '{user_data.role.value}' cannot be self-registered. "
+                "Contact your fleet manager to create privileged accounts."
+            ),
+        )
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = User(
+        name=user_data.name,
         email=user_data.email,
         password_hash=hash_password(user_data.password),
         role=user_data.role,
@@ -114,3 +132,58 @@ def login(
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# ─── Admin-only User Management (fleet_manager) ──────────────────────────────
+
+@router.get("/users", response_model=List[UserResponse])
+def list_users(
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role([UserRole.fleet_manager])),
+):
+    """List all platform users — fleet_manager only."""
+    return db.query(User).order_by(User.created_at.desc()).all()
+
+
+@router.post("/users", response_model=UserResponse, status_code=201)
+def admin_create_user(
+    user_data: UserAdminCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_role([UserRole.fleet_manager])),
+):
+    """
+    Create any role (including fleet_manager, safety_officer) — fleet_manager only.
+    This is the only way to create privileged accounts.
+    """
+    if db.query(User).filter(User.email == user_data.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    user = User(
+        name=user_data.name,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role=user_data.role,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@router.patch("/users/{user_id}/deactivate", response_model=UserResponse)
+def deactivate_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role([UserRole.fleet_manager])),
+):
+    """Deactivate a user account — fleet_manager only."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot deactivate your own account")
+    user.is_active = False
+    db.commit()
+    db.refresh(user)
+    return user
+
