@@ -3,8 +3,8 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from ..models.vehicle import Vehicle, VehicleStatusEnum
-from ..models.driver import Driver, DriverStatusEnum
+from ..models.vehicle import Vehicle, VehicleStatus
+from ..models.driver import Driver, DriverStatus
 from ..schemas import (
     VehicleCreate, VehicleUpdate, VehicleStatusUpdate,
     DriverCreate, DriverUpdate, DriverStatusUpdate,
@@ -19,7 +19,7 @@ def get_vehicles(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
-    status: Optional[VehicleStatusEnum] = None,
+    status: Optional[VehicleStatus] = None,
     v_type: Optional[str] = None,
     region: Optional[str] = None,
     sort_by: str = "id",
@@ -92,7 +92,7 @@ def get_drivers(
     skip: int = 0,
     limit: int = 100,
     search: Optional[str] = None,
-    status: Optional[DriverStatusEnum] = None,
+    status: Optional[DriverStatus] = None,
     license_category: Optional[str] = None,
     sort_by: str = "id",
     order: str = "asc",

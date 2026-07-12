@@ -4,14 +4,14 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from ....core.db import get_db
-from ....models.user import User, RoleEnum
-from ....models.driver import DriverStatusEnum
+from ....models.user import User, UserRole
+from ....models.driver import DriverStatus
 from ....schemas import DriverCreate, DriverUpdate, DriverStatusUpdate, DriverResponse
 from ....services.fleet import (
     get_drivers, get_driver_by_id,
     create_driver, update_driver, update_driver_status,
 )
-from ...deps import get_current_user, require_role
+from app.auth import get_current_user, require_role
 
 router = APIRouter()
 
@@ -19,7 +19,7 @@ router = APIRouter()
 @router.get("/", response_model=List[DriverResponse])
 def list_drivers(
     search: Optional[str] = Query(None, description="Search name or license_number"),
-    status: Optional[DriverStatusEnum] = Query(None),
+    status: Optional[DriverStatus] = Query(None),
     license_category: Optional[str] = Query(None),
     sort_by: str = Query("id"),
     order: str = Query("asc", pattern="^(asc|desc)$"),
@@ -46,7 +46,7 @@ def get_driver(
 def add_driver(
     data: DriverCreate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(RoleEnum.fleet_manager, RoleEnum.safety_officer)),
+    _: User = Depends(require_role([UserRole.fleet_manager, UserRole.safety_officer])),
 ):
     driver = create_driver(db, data)
     return DriverResponse.from_orm_with_computed(driver)
@@ -57,7 +57,7 @@ def edit_driver(
     driver_id: int,
     data: DriverUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(RoleEnum.fleet_manager, RoleEnum.safety_officer)),
+    _: User = Depends(require_role([UserRole.fleet_manager, UserRole.safety_officer])),
 ):
     driver = update_driver(db, driver_id, data)
     return DriverResponse.from_orm_with_computed(driver)
@@ -68,7 +68,7 @@ def change_driver_status(
     driver_id: int,
     data: DriverStatusUpdate,
     db: Session = Depends(get_db),
-    _: User = Depends(require_role(RoleEnum.fleet_manager, RoleEnum.safety_officer)),
+    _: User = Depends(require_role([UserRole.fleet_manager, UserRole.safety_officer])),
 ):
     driver = update_driver_status(db, driver_id, data)
     return DriverResponse.from_orm_with_computed(driver)

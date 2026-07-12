@@ -3,9 +3,9 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
-from ..models.user import RoleEnum
-from ..models.vehicle import VehicleStatusEnum
-from ..models.driver import DriverStatusEnum
+from ..models.user import UserRole
+from ..models.vehicle import VehicleStatus
+from ..models.driver import DriverStatus
 
 # ── Auth ───────────────────────────────────────────────────────────────────────
 
@@ -17,7 +17,7 @@ class Token(BaseModel):
 class UserResponse(BaseModel):
     id: int
     email: EmailStr
-    role: RoleEnum
+    role: UserRole
     is_active: bool
 
     model_config = {"from_attributes": True}
@@ -50,7 +50,7 @@ class VehicleUpdate(BaseModel):
 
 
 class VehicleStatusUpdate(BaseModel):
-    status: VehicleStatusEnum
+    status: VehicleStatus
 
 
 class VehicleResponse(BaseModel):
@@ -62,7 +62,7 @@ class VehicleResponse(BaseModel):
     odometer: float
     acquisition_cost: float
     region: str
-    status: VehicleStatusEnum
+    status: VehicleStatus
 
     model_config = {"from_attributes": True}
 
@@ -97,7 +97,7 @@ class DriverUpdate(BaseModel):
 
 
 class DriverStatusUpdate(BaseModel):
-    status: DriverStatusEnum
+    status: DriverStatus
 
 
 class DriverResponse(BaseModel):
@@ -108,7 +108,7 @@ class DriverResponse(BaseModel):
     license_expiry: date
     contact_number: Optional[str]
     safety_score: float
-    status: DriverStatusEnum
+    status: DriverStatus
     # Computed fields — derived fresh, not stored in DB
     is_license_valid: bool
     days_until_expiry: int

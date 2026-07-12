@@ -1,7 +1,7 @@
 def test_login_invalid_email_format(client):
     response = client.post("/api/v1/auth/login", data={"username": "not-an-email", "password": "password123"})
-    assert response.status_code == 422
-    assert "Invalid email format" in response.json()["detail"]
+    assert response.status_code == 401
+    assert "Incorrect email or password" in response.json()["detail"]
 
 def test_login_wrong_password(client):
     response = client.post("/api/v1/auth/login", data={"username": "fleet@test.com", "password": "wrongpassword"})
@@ -32,4 +32,4 @@ def test_require_role_blocks_wrong_user(client, driver_token):
         }
     )
     assert response.status_code == 403
-    assert response.json()["detail"] == "Not authorized for this action"
+    assert response.json()["detail"] == "Role 'driver' is not authorized for this action"

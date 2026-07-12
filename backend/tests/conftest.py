@@ -1,14 +1,16 @@
 
 import pytest
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.main import app
-from app.core.db import Base, get_db
-from app.models.user import User, RoleEnum
-from app.core.security import get_password_hash
+from app.core.db import Base, get_db as core_get_db
+from app.database import get_db as auth_get_db
+from app.models.user import User, UserRole
+from app.auth import hash_password
 
 # Use an in-memory SQLite database for testing
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -27,8 +29,9 @@ def override_get_db():
     finally:
         db.close()
 
-# Override the FastAPI dependency
-app.dependency_overrides[get_db] = override_get_db
+# Override both FastAPI dependencies (Eng 01's and Eng 03's)
+app.dependency_overrides[core_get_db] = override_get_db
+app.dependency_overrides[auth_get_db] = override_get_db
 
 @pytest.fixture(scope="module")
 def db_session():
@@ -39,15 +42,15 @@ def db_session():
     # Seed a test user (Fleet Manager)
     fleet_manager = User(
         email="fleet@test.com",
-        password_hash=get_password_hash("testpass"),
-        role=RoleEnum.fleet_manager,
+        password_hash=hash_password("testpass"),
+        role=UserRole.fleet_manager,
         is_active=True,
     )
     # Seed a test user (Driver)
     driver_user = User(
         email="driver@test.com",
-        password_hash=get_password_hash("testpass"),
-        role=RoleEnum.driver,
+        password_hash=hash_password("testpass"),
+        role=UserRole.driver,
         is_active=True,
     )
     
@@ -59,6 +62,11 @@ def db_session():
     
     # Drop the schema after tests
     Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture(scope="module", autouse=True)
+def mock_setup_database():
+    with patch("app.main.setup_database"):
+        yield
 
 @pytest.fixture(scope="module")
 def client(db_session):

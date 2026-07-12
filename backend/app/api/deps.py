@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from ..core.config import settings
 from ..core.db import get_db
-from ..models.user import User, RoleEnum
+from ..models.user import User, UserRole
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
@@ -39,7 +39,7 @@ def get_current_user(
     return user
 
 
-def require_role(*allowed_roles: RoleEnum):
+def require_role(*allowed_roles: UserRole):
     """
     RBAC dependency — reusable by Eng 02 and Eng 03.
 

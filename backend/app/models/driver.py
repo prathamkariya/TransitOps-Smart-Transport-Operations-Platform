@@ -6,7 +6,7 @@ from sqlalchemy.sql import func
 from ..core.db import Base
 
 
-class DriverStatusEnum(str, enum.Enum):
+class DriverStatus(str, enum.Enum):
     available = "available"
     on_trip = "on_trip"
     off_duty = "off_duty"
@@ -24,8 +24,8 @@ class Driver(Base):
     contact_number = Column(String, nullable=True)
     safety_score = Column(Float, default=100.0, nullable=False)
     status = Column(
-        Enum(DriverStatusEnum),
-        default=DriverStatusEnum.available,
+        Enum(DriverStatus),
+        default=DriverStatus.available,
         nullable=False,
     )
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
