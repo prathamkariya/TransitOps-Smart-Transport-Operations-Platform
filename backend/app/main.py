@@ -27,6 +27,8 @@ from app.fuel import router as fuel_router
 from app.expenses import router as expense_router
 from app.dashboard import router as dashboard_router
 from app.reports import router as reports_router
+from app.trips import trips_router
+from app.maintenance import maintenance_router
 
 logger = logging.getLogger("transitops")
 logging.basicConfig(level=logging.INFO)
@@ -116,6 +118,8 @@ app.include_router(fuel_router, prefix=PREFIX)
 app.include_router(expense_router, prefix=PREFIX)
 app.include_router(dashboard_router, prefix=PREFIX)
 app.include_router(reports_router, prefix=PREFIX)
+app.include_router(trips_router, prefix=PREFIX)
+app.include_router(maintenance_router, prefix=PREFIX)
 
 
 # ── Health ───────────────────────────────────────────────────────────────────
