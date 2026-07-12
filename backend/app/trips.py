@@ -1,7 +1,7 @@
 # Engineer 2 - Trips (Routes + Service layer)
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date, datetime, timezone
 from typing import List
 
 from app.database import get_db
@@ -102,6 +102,7 @@ class TripService:
 
         # Transition status
         trip.status = "dispatched"
+        trip.dispatched_at = datetime.now(timezone.utc)
         vehicle.status = "on_trip"
         driver.status = "on_trip"
 
@@ -129,15 +130,18 @@ class TripService:
 
         vehicle.odometer = final_odometer
         trip.status = "completed"
+        trip.completed_at = datetime.now(timezone.utc)
         vehicle.status = "available"
         driver.status = "available"
 
         # Record fuel log if provided
         if fuel_consumed_liters is not None and fuel_consumed_liters > 0:
+            cost_per_liter = (fuel_cost / fuel_consumed_liters) if fuel_cost and fuel_consumed_liters > 0 else 0.0
             db_fuel_log = FuelLog(
                 vehicle_id=trip.vehicle_id,
                 liters=fuel_consumed_liters,
-                cost=fuel_cost or 0.0,
+                cost_per_liter=cost_per_liter,
+                total_cost=fuel_cost or 0.0,
                 date=date.today()
             )
             db.add(db_fuel_log)
@@ -168,6 +172,14 @@ class TripService:
         db.refresh(trip)
         return trip
 
+@trips_router.get("/", response_model=List[TripResponse])
+def list_trips(db: Session = Depends(get_db)):
+    return db.query(Trip).order_by(Trip.id.desc()).all()
+
+@trips_router.get("/{trip_id}", response_model=TripResponse)
+def get_trip(trip_id: int, db: Session = Depends(get_db)):
+    return TripService.get_trip(db=db, trip_id=trip_id)
+
 @trips_router.post("/", response_model=TripResponse, status_code=status.HTTP_201_CREATED)
 def create_trip(trip_in: TripCreate, db: Session = Depends(get_db)):
     return TripService.create_trip(db=db, trip_data=trip_in)
@@ -178,17 +190,17 @@ def dispatch_trip(trip_id: int, db: Session = Depends(get_db)):
 
 @trips_router.post("/{trip_id}/complete", response_model=TripResponse)
 def complete_trip(
-    trip_id: int, 
-    final_odometer: float, 
-    fuel_consumed_liters: float = None, 
+    trip_id: int,
+    final_odometer: float,
+    fuel_consumed_liters: float = None,
     fuel_cost: float = None,
     db: Session = Depends(get_db)
 ):
     return TripService.complete_trip(
-        db=db, 
-        trip_id=trip_id, 
-        final_odometer=final_odometer, 
-        fuel_consumed_liters=fuel_consumed_liters, 
+        db=db,
+        trip_id=trip_id,
+        final_odometer=final_odometer,
+        fuel_consumed_liters=fuel_consumed_liters,
         fuel_cost=fuel_cost
     )
 

@@ -8,6 +8,10 @@ from app.database import Base
 class ExpenseType(str, enum.Enum):
     toll = "toll"
     repair = "repair"
+    parking = "parking"
+    cleaning = "cleaning"
+    insurance = "insurance"
+    other = "other"
     misc = "misc"
 
 

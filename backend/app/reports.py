@@ -64,17 +64,14 @@ def _trip_distance(db: Session, vehicle_id: int, date_from, date_to) -> float:
     return q.scalar() or 0.0
 
 
-# ─── Fuel Efficiency ─────────────────────────────────────────────────────────
+# ─── Service functions (reusable by CSV export) ───────────────────────────────
 
-@router.get("/fuel-efficiency", response_model=List[FuelEfficiencyRow])
-def fuel_efficiency_report(
-    vehicle_id: Optional[int] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    """km per litre for each vehicle over the selected period."""
+def _fuel_efficiency_data(
+    db: Session,
+    vehicle_id: Optional[int],
+    date_from: Optional[date],
+    date_to: Optional[date],
+) -> List[FuelEfficiencyRow]:
     result = []
     for v in _get_vehicles(db, vehicle_id):
         liters, fuel_cost = _fuel_totals(db, v.id, date_from, date_to)
@@ -84,7 +81,7 @@ def fuel_efficiency_report(
             FuelEfficiencyRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 total_distance_km=round(distance, 2),
                 total_fuel_liters=round(liters, 2),
@@ -95,17 +92,12 @@ def fuel_efficiency_report(
     return result
 
 
-# ─── Operational Cost ────────────────────────────────────────────────────────
-
-@router.get("/operational-cost", response_model=List[OperationalCostRow])
-def operational_cost_report(
-    vehicle_id: Optional[int] = Query(None),
-    date_from: Optional[date] = Query(None),
-    date_to: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    """Total operational cost = fuel + maintenance + expenses per vehicle."""
+def _operational_cost_data(
+    db: Session,
+    vehicle_id: Optional[int],
+    date_from: Optional[date],
+    date_to: Optional[date],
+) -> List[OperationalCostRow]:
     result = []
     for v in _get_vehicles(db, vehicle_id):
         fuel_q = db.query(func.coalesce(func.sum(FuelLog.total_cost), 0.0)).filter(
@@ -139,7 +131,7 @@ def operational_cost_report(
             OperationalCostRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 status=v.status.value,
                 total_fuel_cost=round(fuel_cost, 2),
@@ -151,15 +143,10 @@ def operational_cost_report(
     return result
 
 
-# ─── Vehicle ROI ─────────────────────────────────────────────────────────────
-
-@router.get("/vehicle-roi", response_model=List[VehicleROIRow])
-def vehicle_roi_report(
-    vehicle_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    """ROI = (Revenue - OperationalCost) / AcquisitionCost × 100"""
+def _vehicle_roi_data(
+    db: Session,
+    vehicle_id: Optional[int],
+) -> List[VehicleROIRow]:
     result = []
     for v in _get_vehicles(db, vehicle_id):
         revenue = db.query(func.coalesce(func.sum(Trip.revenue), 0.0)).filter(
@@ -185,7 +172,7 @@ def vehicle_roi_report(
             VehicleROIRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 acquisition_cost=v.acquisition_cost,
                 total_revenue=round(revenue, 2),
                 total_operational_cost=round(op_cost, 2),
@@ -196,15 +183,10 @@ def vehicle_roi_report(
     return result
 
 
-# ─── Fleet Utilization ───────────────────────────────────────────────────────
-
-@router.get("/fleet-utilization", response_model=List[FleetUtilizationRow])
-def fleet_utilization_report(
-    vehicle_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
-):
-    """Trip count breakdown per vehicle."""
+def _fleet_utilization_data(
+    db: Session,
+    vehicle_id: Optional[int],
+) -> List[FleetUtilizationRow]:
     result = []
     for v in _get_vehicles(db, vehicle_id):
         total = db.query(func.count(Trip.id)).filter(Trip.vehicle_id == v.id).scalar() or 0
@@ -219,7 +201,7 @@ def fleet_utilization_report(
             FleetUtilizationRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 current_status=v.status.value,
                 total_trips=total,
@@ -228,6 +210,52 @@ def fleet_utilization_report(
             )
         )
     return result
+
+
+# ─── Route Handlers ───────────────────────────────────────────────────────────
+
+@router.get("/fuel-efficiency", response_model=List[FuelEfficiencyRow])
+def fuel_efficiency_report(
+    vehicle_id: Optional[int] = Query(None),
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """km per litre for each vehicle over the selected period."""
+    return _fuel_efficiency_data(db, vehicle_id, date_from, date_to)
+
+
+@router.get("/operational-cost", response_model=List[OperationalCostRow])
+def operational_cost_report(
+    vehicle_id: Optional[int] = Query(None),
+    date_from: Optional[date] = Query(None),
+    date_to: Optional[date] = Query(None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Total operational cost = fuel + maintenance + expenses per vehicle."""
+    return _operational_cost_data(db, vehicle_id, date_from, date_to)
+
+
+@router.get("/vehicle-roi", response_model=List[VehicleROIRow])
+def vehicle_roi_report(
+    vehicle_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """ROI = (Revenue - OperationalCost) / AcquisitionCost × 100"""
+    return _vehicle_roi_data(db, vehicle_id)
+
+
+@router.get("/fleet-utilization", response_model=List[FleetUtilizationRow])
+def fleet_utilization_report(
+    vehicle_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+):
+    """Trip count breakdown per vehicle."""
+    return _fleet_utilization_data(db, vehicle_id)
 
 
 # ─── CSV Export (mandatory per spec) ─────────────────────────────────────────
@@ -242,14 +270,15 @@ def export_csv(
     date_from: Optional[date] = Query(None),
     date_to: Optional[date] = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_user),
 ):
     """Download any report as a CSV file."""
+    # Call shared service functions — not route handlers — to avoid DI issues
     dispatch = {
-        "fuel_efficiency": lambda: [r.model_dump() for r in fuel_efficiency_report(vehicle_id, date_from, date_to, db, current_user)],
-        "operational_cost": lambda: [r.model_dump() for r in operational_cost_report(vehicle_id, date_from, date_to, db, current_user)],
-        "vehicle_roi": lambda: [r.model_dump() for r in vehicle_roi_report(vehicle_id, db, current_user)],
-        "fleet_utilization": lambda: [r.model_dump() for r in fleet_utilization_report(vehicle_id, db, current_user)],
+        "fuel_efficiency":   lambda: [r.model_dump() for r in _fuel_efficiency_data(db, vehicle_id, date_from, date_to)],
+        "operational_cost":  lambda: [r.model_dump() for r in _operational_cost_data(db, vehicle_id, date_from, date_to)],
+        "vehicle_roi":       lambda: [r.model_dump() for r in _vehicle_roi_data(db, vehicle_id)],
+        "fleet_utilization": lambda: [r.model_dump() for r in _fleet_utilization_data(db, vehicle_id)],
     }
 
     if report_type not in dispatch:
@@ -260,15 +289,13 @@ def export_csv(
 
     rows = dispatch[report_type]()
     if not rows:
-        # Return empty CSV with headers from schema if no data
         schema_map = {
-            "fuel_efficiency": FuelEfficiencyRow,
-            "operational_cost": OperationalCostRow,
-            "vehicle_roi": VehicleROIRow,
+            "fuel_efficiency":   FuelEfficiencyRow,
+            "operational_cost":  OperationalCostRow,
+            "vehicle_roi":       VehicleROIRow,
             "fleet_utilization": FleetUtilizationRow,
         }
         fieldnames = list(schema_map[report_type].model_fields.keys())
-        rows = []
     else:
         fieldnames = list(rows[0].keys())
 

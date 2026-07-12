@@ -11,8 +11,8 @@ const pct = (n) => `${fmtNum(n, 1)}%`
 function StatCard({ label, value, color }) {
   return (
     <div className="card" style={{ padding: '1rem 1.25rem' }}>
-      <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: '1.375rem', fontWeight: 800, color: color || 'var(--color-text)' }}>{value}</div>
+      <div style={{ fontSize: '0.6875rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-muted)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: color || 'var(--color-text)' }}>{value}</div>
     </div>
   )
 }
@@ -410,8 +410,10 @@ function Spinner() {
 function Empty({ label }) {
   return (
     <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
-      <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>📊</div>
-      <p>{label}</p>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 0.75rem' }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="#B0B0B0"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+      </div>
+      <p style={{ margin: 0, fontSize: '0.875rem' }}>{label}</p>
     </div>
   )
 }
@@ -431,10 +433,10 @@ const CSV_REPORT_TYPES = [
 
 // ── Tab definitions ────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'fuel_efficiency', label: '⛽ Fuel Efficiency' },
-  { id: 'operational_cost', label: '💸 Operational Cost' },
-  { id: 'vehicle_roi', label: '📈 Vehicle ROI' },
-  { id: 'fleet_utilization', label: '🚛 Fleet Utilization' },
+  { id: 'fuel_efficiency',   label: 'Fuel Efficiency' },
+  { id: 'operational_cost',  label: 'Operational Cost' },
+  { id: 'vehicle_roi',       label: 'Vehicle ROI' },
+  { id: 'fleet_utilization', label: 'Fleet Utilization' },
 ]
 
 // ── Main Page ──────────────────────────────────────────────────────────────
@@ -471,8 +473,8 @@ export default function ReportsPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <h2 style={{ margin: 0, fontWeight: 800, fontSize: '1.375rem' }}>📊 Reports & Analytics</h2>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: '1.25rem' }}>Reports & Analytics</h2>
+          <p style={{ margin: '0.25rem 0 0', color: 'var(--color-text-muted)', fontSize: '0.8125rem' }}>
             Fleet performance insights with CSV export
           </p>
         </div>
@@ -486,7 +488,7 @@ export default function ReportsPage() {
               onClick={() => downloadCsv(r.value)}
               title={`Download ${r.label} CSV`}
             >
-              ⬇️ {r.label} CSV
+              {r.label} CSV
             </button>
           ))}
         </div>

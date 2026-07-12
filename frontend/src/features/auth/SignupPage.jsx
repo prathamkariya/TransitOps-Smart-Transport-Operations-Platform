@@ -1,62 +1,43 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-// ── Role descriptions for the UI ────────────────────────────────────────────
 const SELF_REGISTER_ROLES = [
-  {
-    value: 'dispatcher',
-    label: 'Dispatcher',
-    icon: '🗺️',
-    desc: 'Manage trip scheduling and dispatch operations',
-    access: 'Dashboard, Trips',
-  },
-  {
-    value: 'financial_analyst',
-    label: 'Financial Analyst',
-    icon: '📊',
-    desc: 'Track fuel costs, expenses, and financial analytics',
-    access: 'Fuel & Expenses, Analytics',
-  },
+  { value: 'dispatcher', label: 'Dispatcher', desc: 'Manage trip scheduling and dispatch operations', access: 'Dashboard, Trips' },
+  { value: 'financial_analyst', label: 'Financial Analyst', desc: 'Track fuel costs, expenses, and financial analytics', access: 'Fuel & Expenses, Analytics' },
 ]
 
 function PasswordStrength({ password }) {
-  const score = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter((r) => r.test(password)).length
+  const score = [/.{8,}/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(password)).length
   const labels = ['', 'Weak', 'Fair', 'Good', 'Strong']
-  const colors = ['', '#ef4444', '#f59e0b', '#3b82f6', '#22c55e']
+  const colors = ['', '#DC3545', '#D97706', '#017E84', '#28A745']
   if (!password) return null
   return (
     <div style={{ marginTop: '0.375rem' }}>
       <div style={{ display: 'flex', gap: 3 }}>
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} style={{
-            flex: 1, height: 3, borderRadius: 99,
-            background: i <= score ? colors[score] : 'rgba(255,255,255,0.15)',
-            transition: 'background 0.3s',
-          }} />
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} style={{ flex: 1, height: 3, borderRadius: 99, background: i <= score ? colors[score] : '#E0E0E0', transition: 'background 0.3s' }} />
         ))}
       </div>
-      <div style={{ fontSize: '0.7rem', color: colors[score], marginTop: 3 }}>{labels[score]}</div>
+      <div style={{ fontSize: '0.6875rem', color: colors[score], marginTop: 3 }}>{labels[score]}</div>
     </div>
   )
 }
 
 export default function SignupPage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState(1) // 1=role pick, 2=form
+  const [step, setStep] = useState(1)
   const [selectedRole, setSelectedRole] = useState(null)
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
+  const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (form.password !== form.confirm) { setError('Passwords do not match'); return }
     if (form.password.length < 6) { setError('Password must be at least 6 characters'); return }
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const res = await fetch('/api/v1/auth/register', {
         method: 'POST',
@@ -65,185 +46,116 @@ export default function SignupPage() {
       })
       const data = await res.json()
       if (!res.ok) {
-        // Pydantic v2 returns detail as an array of error objects; plain FastAPI 
-        // HTTPException returns it as a string — handle both gracefully
         let msg = 'Registration failed'
-        if (typeof data.detail === 'string') {
-          msg = data.detail
-        } else if (Array.isArray(data.detail) && data.detail.length > 0) {
-          // Extract the first error message, strip verbose email-validator prefix
+        if (typeof data.detail === 'string') msg = data.detail
+        else if (Array.isArray(data.detail) && data.detail.length > 0) {
           const raw = data.detail[0]?.msg || 'Validation error'
-          msg = raw.replace(/^value is not a valid email address:\s*/i, '')
-                   .replace(/^Value error,\s*/i, '')
-                   .replace(/^String should match pattern.*/, 'Invalid format')
+          msg = raw.replace(/^value is not a valid email address:\s*/i, '').replace(/^Value error,\s*/i, '').replace(/^String should match pattern.*/, 'Invalid format')
         }
         throw new Error(msg)
       }
       setSuccess(true)
       setTimeout(() => navigate('/login'), 2500)
-    } catch (ex) {
-      setError(ex.message)
-    } finally {
-      setLoading(false)
-    }
+    } catch (ex) { setError(ex.message) }
+    finally { setLoading(false) }
   }
 
-  const roleInfo = SELF_REGISTER_ROLES.find((r) => r.value === selectedRole)
+  if (success) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#F0EDF2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="card" style={{ maxWidth: 420, width: '100%', textAlign: 'center', padding: '2.5rem', borderRadius: 8 }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#D4EDDA', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem', color: '#155724' }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          </div>
+          <h2 style={{ fontWeight: 700, fontSize: '1.25rem', marginBottom: '0.5rem' }}>Account created</h2>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Redirecting you to login...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)',
-      padding: '2rem 1rem',
-    }}>
-      <div style={{ width: '100%', maxWidth: 480 }}>
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: 16,
-            background: 'linear-gradient(135deg, #6366f1, #4338ca)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem',
-            boxShadow: '0 20px 40px rgba(99,102,241,0.4)',
-            fontSize: 28,
-          }}>🚌</div>
-          <h1 style={{ color: 'white', margin: 0, fontSize: '1.75rem', fontWeight: 800 }}>TransitOps</h1>
-          <p style={{ color: '#94a3b8', margin: '0.5rem 0 0', fontSize: '0.875rem' }}>
-            Create your account
+    <div style={{ minHeight: '100vh', background: '#F0EDF2', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div style={{ width: '100%', maxWidth: step === 1 ? 560 : 440 }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.625rem', marginBottom: '1rem' }}>
+            <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--odoo-purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4z"/></svg>
+            </div>
+            <span style={{ fontWeight: 700, fontSize: '1.125rem', color: 'var(--odoo-purple)' }}>TransitOps</span>
+          </div>
+          <h1 style={{ fontWeight: 700, fontSize: '1.375rem', marginBottom: '0.375rem' }}>Create an Account</h1>
+          <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+            {step === 1 ? 'Choose your role to get started' : `Registering as ${SELF_REGISTER_ROLES.find(r => r.value === selectedRole)?.label}`}
           </p>
         </div>
 
-        <div style={{
-          background: 'rgba(255,255,255,0.05)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '1.25rem',
-          padding: '2rem',
-        }}>
-          {success ? (
-            <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✅</div>
-              <h3 style={{ color: 'white', margin: '0 0 0.5rem' }}>Account Created!</h3>
-              <p style={{ color: '#94a3b8', margin: 0 }}>Redirecting to login…</p>
-            </div>
-          ) : step === 1 ? (
+        <div className="card" style={{ borderRadius: 8, padding: '1.75rem' }}>
+          {step === 1 ? (
             <>
-              <h2 style={{ color: 'white', margin: '0 0 0.375rem', fontSize: '1.125rem', fontWeight: 700 }}>
-                Select your role
-              </h2>
-              <p style={{ color: '#64748b', fontSize: '0.8125rem', margin: '0 0 1.5rem' }}>
-                Choose the role that matches your responsibilities.
-              </p>
               <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                {SELF_REGISTER_ROLES.map((role) => (
-                  <button
-                    key={role.value}
-                    id={`role-${role.value}`}
-                    onClick={() => setSelectedRole(role.value)}
-                    style={{
-                      background: selectedRole === role.value
-                        ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${selectedRole === role.value ? '#6366f1' : 'rgba(255,255,255,0.08)'}`,
-                      borderRadius: '0.75rem',
-                      padding: '1rem 1.25rem',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      gap: '1rem',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <span style={{ fontSize: '1.75rem', lineHeight: 1, flexShrink: 0 }}>{role.icon}</span>
+                {SELF_REGISTER_ROLES.map(role => (
+                  <label key={role.value} style={{
+                    display: 'flex', gap: '1rem', padding: '1rem 1.25rem', borderRadius: 6,
+                    border: `1.5px solid ${selectedRole === role.value ? 'var(--odoo-purple)' : 'var(--color-border)'}`,
+                    cursor: 'pointer', transition: 'border-color 0.12s',
+                    background: selectedRole === role.value ? 'rgba(113,75,103,0.04)' : 'transparent',
+                  }}>
+                    <input type="radio" name="role" value={role.value} checked={selectedRole === role.value} onChange={() => setSelectedRole(role.value)} style={{ marginTop: 2, accentColor: 'var(--odoo-purple)' }} />
                     <div>
-                      <div style={{ color: 'white', fontWeight: 700, fontSize: '0.9375rem', marginBottom: 2 }}>{role.label}</div>
-                      <div style={{ color: '#94a3b8', fontSize: '0.8125rem', marginBottom: 4 }}>{role.desc}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#6366f1', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Access: {role.access}
-                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--color-text)' }}>{role.label}</div>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginTop: 2 }}>{role.desc}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--odoo-purple)', marginTop: 4, fontWeight: 500 }}>Access: {role.access}</div>
                     </div>
-                  </button>
+                  </label>
                 ))}
               </div>
-              {/* Admin notice */}
-              <div style={{
-                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
-                borderRadius: '0.625rem', padding: '0.75rem 1rem', marginBottom: '1.5rem',
-                fontSize: '0.8125rem', color: '#fbbf24',
-              }}>
-                🔒 <strong>Fleet Manager / Safety Officer?</strong> These accounts must be created by your fleet manager. Contact them to get access.
+
+              <div className="alert-banner alert-info" style={{ marginBottom: '1.25rem', fontSize: '0.8125rem' }}>
+                Fleet Manager and Safety Officer accounts must be created by a Fleet Manager.
               </div>
-              <button
-                id="signup-role-next"
-                className="btn btn-primary"
-                style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', background: 'linear-gradient(135deg,#6366f1,#4338ca)', border: 'none' }}
-                disabled={!selectedRole}
-                onClick={() => setStep(2)}
-              >
-                Continue as {roleInfo?.label || '…'} →
+
+              <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '0.625rem' }}
+                disabled={!selectedRole} onClick={() => setStep(2)}>
+                Continue
               </button>
             </>
           ) : (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                <button onClick={() => setStep(1)} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.5rem', color: '#94a3b8', padding: '0.375rem 0.75rem', cursor: 'pointer', fontSize: '0.875rem' }}>← Back</button>
+              {error && <div className="alert-banner alert-danger" style={{ marginBottom: '1rem' }}>{error}</div>}
+              <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
                 <div>
-                  <h2 style={{ color: 'white', margin: 0, fontSize: '1.125rem', fontWeight: 700 }}>
-                    {roleInfo?.icon} {roleInfo?.label}
-                  </h2>
-                  <div style={{ fontSize: '0.7rem', color: '#6366f1', fontWeight: 600, textTransform: 'uppercase' }}>
-                    Access: {roleInfo?.access}
-                  </div>
+                  <label className="form-label">Full Name</label>
+                  <input id="signup-name" className="form-input" type="text" placeholder="Ramesh Kumar" value={form.name} onChange={set('name')} required />
                 </div>
-              </div>
-              {error && (
-                <div style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid #ef4444', borderRadius: '0.5rem', padding: '0.75rem', marginBottom: '1rem', color: '#ef4444', fontSize: '0.875rem' }}>
-                  ⚠️ {error}
+                <div>
+                  <label className="form-label">Email Address</label>
+                  <input id="signup-email" className="form-input" type="email" placeholder="you@company.com" value={form.email} onChange={set('email')} required />
                 </div>
-              )}
-              <form onSubmit={handleSubmit}>
-                <div style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <div>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Full Name</label>
-                    <input id="signup-name" type="text" className="form-input" placeholder="Jane Smith"
-                      value={form.name} onChange={set('name')}
-                      style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Email address *</label>
-                    <input id="signup-email" type="email" className="form-input" placeholder="you@company.com" required
-                      value={form.email} onChange={set('email')}
-                      style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Password *</label>
-                    <input id="signup-password" type="password" className="form-input" placeholder="Min. 6 characters" required
-                      value={form.password} onChange={set('password')}
-                      style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }} />
-                    <PasswordStrength password={form.password} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '0.8125rem', fontWeight: 600, marginBottom: 6 }}>Confirm Password *</label>
-                    <input id="signup-confirm" type="password" className="form-input" placeholder="Repeat password" required
-                      value={form.confirm} onChange={set('confirm')}
-                      style={{ background: 'rgba(255,255,255,0.07)', borderColor: 'rgba(255,255,255,0.1)', color: 'white' }} />
-                  </div>
+                <div>
+                  <label className="form-label">Password</label>
+                  <input id="signup-password" className="form-input" type="password" placeholder="Minimum 6 characters" value={form.password} onChange={set('password')} required minLength={6} />
+                  <PasswordStrength password={form.password} />
                 </div>
-                <button id="signup-submit" type="submit" className="btn btn-primary" disabled={loading}
-                  style={{ width: '100%', justifyContent: 'center', padding: '0.75rem', background: 'linear-gradient(135deg,#6366f1,#4338ca)', border: 'none' }}>
-                  {loading ? 'Creating account…' : 'Create Account'}
-                </button>
+                <div>
+                  <label className="form-label">Confirm Password</label>
+                  <input id="signup-confirm" className="form-input" type="password" placeholder="Repeat password" value={form.confirm} onChange={set('confirm')} required />
+                </div>
+                <div style={{ display: 'flex', gap: '0.625rem', marginTop: '0.25rem' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => { setStep(1); setError('') }} style={{ flex: 1 }}>Back</button>
+                  <button id="signup-submit" type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 2, justifyContent: 'center' }}>
+                    {loading ? 'Creating account...' : 'Create Account'}
+                  </button>
+                </div>
               </form>
             </>
           )}
         </div>
 
-        <p style={{ textAlign: 'center', color: '#64748b', fontSize: '0.8125rem', marginTop: '1.5rem' }}>
+        <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.8125rem', marginTop: '1.25rem' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{ color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
+          <Link to="/login" style={{ color: 'var(--odoo-purple)', fontWeight: 600, textDecoration: 'none' }}>Sign in</Link>
         </p>
       </div>
     </div>
