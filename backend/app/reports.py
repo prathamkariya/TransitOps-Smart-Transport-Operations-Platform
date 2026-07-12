@@ -84,7 +84,7 @@ def fuel_efficiency_report(
             FuelEfficiencyRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 total_distance_km=round(distance, 2),
                 total_fuel_liters=round(liters, 2),
@@ -139,7 +139,7 @@ def operational_cost_report(
             OperationalCostRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 status=v.status.value,
                 total_fuel_cost=round(fuel_cost, 2),
@@ -185,7 +185,7 @@ def vehicle_roi_report(
             VehicleROIRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 acquisition_cost=v.acquisition_cost,
                 total_revenue=round(revenue, 2),
                 total_operational_cost=round(op_cost, 2),
@@ -219,7 +219,7 @@ def fleet_utilization_report(
             FleetUtilizationRow(
                 vehicle_id=v.id,
                 reg_number=v.reg_number,
-                model=v.model,
+                model=v.model_name,
                 type=v.type,
                 current_status=v.status.value,
                 total_trips=total,
