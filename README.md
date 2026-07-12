@@ -1,167 +1,172 @@
-# TransitOps
+ <div align="center">
+  <!-- TODO: Replace the src below with your actual straw-hat.gif path once you have it. The align and width help it fit seamlessly. -->
+  <img src="./assets/straw-hat.gif" width="80" alt="Floating Straw Hat Placeholder" />
 
-**Smart Transport Operations Platform** — built for the Odoo Hiring Hackathon (Virtual Round)
+  <h1>🚀 TransitOps: Smart Transport Operations Platform</h1>
 
-TransitOps replaces spreadsheets and paper logbooks with a centralized platform that manages the full lifecycle of transport operations: vehicle registration → driver management → trip dispatch → maintenance → fuel/expense logging → analytics. The core value isn't any single screen — it's that vehicle and driver status are wired together across every module, so the system itself enforces business rules instead of relying on someone to remember them.
+  <p>
+    <em>Like a reliable Log Pose navigating the unpredictable seas of the New World, TransitOps guides your fleet's journey—replacing chaotic spreadsheets with an automated, synchronized, and robust operational platform.</em>
+  </p>
 
----
-
-## Problem It Solves
-
-| Failure mode (spreadsheet-based ops) | How TransitOps fixes it |
-|---|---|
-| Double-booked vehicles/drivers | Status locks enforced at the service layer, not just the UI |
-| Underutilized fleet | Real-time dashboard KPIs on utilization |
-| Missed maintenance | Maintenance state is tied directly to vehicle status |
-| Expired driver licenses | Dispatch is blocked automatically if a license is expired |
-| Untracked operating costs | Fuel + maintenance costs roll up to a per-vehicle total automatically |
-
----
-
-## Tech Stack
-
-| Layer | Choice |
-|---|---|
-| Frontend | React (Vite) + Tailwind CSS |
-| Charts | Recharts |
-| Backend | FastAPI |
-| ORM / Migrations | SQLAlchemy + Alembic |
-| Database | PostgreSQL (enum-typed status fields) |
-| Auth | JWT + role claim, bcrypt-hashed passwords |
-| Containerization | Docker + Docker Compose |
-
-No third-party BaaS (Firebase/Supabase/Mongo Atlas) — file storage is a local Docker volume, notifications are in-app, no external SMTP.
+  <p align="center">
+    <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E" alt="Vite" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS" />
+    <br/>
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+    <img src="https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+    <img src="https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  </p>
+</div>
 
 ---
 
-## Roles
+## ⚓ The Problem & The Solution
+
+<details>
+<summary><b>❌ The Era of Spreadsheet Operations (Click to expand)</b></summary>
+<br>
+Managing fleets through manual spreadsheets leads to:
+<ul>
+  <li>Double-booked vehicles and drivers.</li>
+  <li>Missed maintenance schedules leading to breakdowns.</li>
+  <li>Dispatching drivers with expired licenses.</li>
+  <li>Untracked operating costs and scattered fuel receipts.</li>
+</ul>
+</details>
+
+<details open>
+<summary><b>✅ The TransitOps Solution</b></summary>
+<br>
+TransitOps acts as a centralized source of truth. Vehicle and driver states are wired together across every module. 
+<strong>The system enforces business rules automatically</strong>, rather than relying on a human to remember them.
+</details>
+
+---
+
+## 🌊 Core Workflows & Architecture
+
+The heartbeat of TransitOps is its state machine. Dispatching, maintaining, and retiring assets are strictly controlled.
+
+```mermaid
+graph TD
+    subgraph Fleet Assets
+        V[Vehicle: Available]
+        D[Driver: Available]
+    end
+
+    subgraph Operations
+        T[Trip Created] -->|Dispatch| O[Status: On Trip]
+        O -->|Complete| C[Trip Completed]
+        O -->|Cancel| X[Trip Cancelled]
+    end
+
+    subgraph Maintenance
+        M[Log Opened] --> S[Status: In Shop]
+        S -->|Log Closed| R[Return to Available]
+    end
+
+    V -->|Assigned to Trip| O
+    D -->|Assigned to Trip| O
+    C -->|Restores State| V
+    C -->|Restores State| D
+    X -->|Restores State| V
+    X -->|Restores State| D
+    
+    V -.->|Needs Repair| M
+```
+
+### ⚙️ Tech Stack Deep Dive
+* **Frontend Application (`/frontend`)**: A blazing fast SPA built with **React** & **Vite**. Styled beautifully using **Tailwind CSS**, with **Recharts** driving the analytical dashboards. Served in production via **Nginx**.
+* **Backend API (`/backend`)**: A robust REST API powered by **FastAPI** & **Python**. 
+* **Database & ORM**: **PostgreSQL** acts as the reliable data vault. **SQLAlchemy** manages the ORM layer, and **Alembic** seamlessly handles schema migrations.
+* **Security**: JWT-based authentication with strict Role-Based Access Control (RBAC) and bcrypt-hashed passwords.
+
+---
+
+## 🗺️ Role-Based Access Control
+
+Everyone has a part to play on the crew. The platform tailors access based on role:
 
 | Role | Responsibility |
-|---|---|
-| **Fleet Manager** | Oversees fleet assets, maintenance, vehicle lifecycle |
-| **Driver** | Creates trips, assigns vehicles/drivers, monitors deliveries |
-| **Safety Officer** | Tracks license validity and safety scores |
-| **Financial Analyst** | Reviews expenses, fuel costs, profitability |
+|:---|:---|
+| 👑 **Fleet Manager** | Oversees fleet assets, maintenance, and the full vehicle lifecycle. |
+| 🚙 **Driver** | Creates trips, monitors deliveries, and oversees active dispatching. |
+| 🛡️ **Safety Officer** | Tracks license validity, safety scores, and blocks unsafe dispatches. |
+| 💰 **Financial Analyst** | Reviews expenses, logs fuel costs, and computes profitability/ROI. |
 
 ---
 
-## Core Features
+## 🚀 Getting Started
 
-- Email/password auth with Role-Based Access Control
-- Dashboard: active/available vehicles, vehicles in maintenance, active/pending trips, drivers on duty, fleet utilization %
-- Vehicle Registry (CRUD) — unique reg number, type, load capacity, odometer, acquisition cost
-- Driver Management (CRUD) — license tracking, safety score, status
-- Trip lifecycle: `Draft → Dispatched → Completed → Cancelled`
-- Maintenance logging — auto-locks vehicle status to `In Shop`
-- Fuel & expense logging with auto-computed operational cost
-- Reports: fuel efficiency, fleet utilization, operational cost, Vehicle ROI, CSV export
-- **Bonus:** search/filter/sort on all lists, dark mode, in-app license/maintenance expiry alerts
-
----
-
-## Business Rules (enforced server-side, not just in the UI)
-
-1. Vehicle registration number is unique (DB constraint)
-2. `Retired` / `In Shop` vehicles never appear in dispatch selection
-3. Expired-license or `Suspended` drivers cannot be assigned to trips
-4. A vehicle or driver already `On Trip` cannot be double-booked
-5. Cargo weight must not exceed the vehicle's max load capacity
-6. Dispatching a trip → vehicle & driver both become `On Trip`
-7. Completing a trip → vehicle & driver both return to `Available`
-8. Cancelling a dispatched trip → vehicle & driver restored to `Available`
-9. Opening maintenance → vehicle becomes `In Shop`
-10. Closing maintenance → vehicle restored to `Available` (unless `Retired`)
-
----
-
-## Project Structure
-
-```
-transitops/
-├── backend/
-│   └── app/
-│       ├── core/               # config, security, db (shared)
-│       ├── models/             # SQLAlchemy models — one file per entity
-│       ├── schemas/            # Pydantic request/response schemas
-│       ├── api/v1/routes/      # auth, vehicles, drivers, trips, maintenance, fuel, reports, dashboard
-│       ├── services/           # business logic — mirrors routes/
-│       └── utils/
-│   ├── alembic/                # migrations
-│   ├── tests/
-│   └── Dockerfile
-├── frontend/
-│   └── src/
-│       ├── api/                # axios client + per-domain wrappers
-│       ├── components/         # shared UI (Table, Modal, StatusBadge, KPICard)
-│       ├── features/           # one folder per domain
-│       └── context/            # AuthContext, ThemeContext
-├── docker-compose.yml
-└── docker-compose.override.yml # local dev overrides
-```
-
----
-
-## Getting Started
+Set sail in just a few commands using Docker.
 
 ### Prerequisites
-- Docker & Docker Compose
-- Node.js 18+
-- Python 3.11+
+* Docker & Docker Compose
+* Node.js 18+ (For local frontend dev)
+* Python 3.11+ (For local backend dev)
 
-### Local Development
-
+### The One-Command Launch (Recommended)
 ```bash
-# 1. Start Postgres in Docker
-docker-compose up postgres
+# Build and run the entire stack (Database, Backend, Frontend, Nginx)
+docker-compose up --build
+```
+> The application will be live at `http://localhost:5173` (or port `80` if using the production proxy).
 
-# 2. Backend (in backend/)
+<details>
+<summary><b>🛠️ Local Development Setup (Without Docker Compose)</b></summary>
+<br>
+
+**1. Start Postgres in Docker**
+```bash
+docker-compose up postgres
+```
+
+**2. Start Backend**
+```bash
+cd backend
 cp .env.example .env
 pip install -r requirements.txt
 alembic upgrade head
 uvicorn app.main:app --reload
+```
 
-# 3. Frontend (in frontend/)
+**3. Start Frontend**
+```bash
+cd frontend
 npm install
 npm run dev
 ```
+</details>
 
-### Full Stack via Docker Compose
+---
 
-```bash
-docker-compose up --build
+## 📂 Project Structure
+
+```text
+transitops/
+├── backend/
+│   ├── app/
+│   │   ├── api/v1/routes/      # Endpoints (auth, vehicles, trips, reports)
+│   │   ├── models/             # SQLAlchemy DB schemas
+│   │   ├── schemas/            # Pydantic request/response validation
+│   │   ├── services/           # Decoupled business logic
+│   │   └── core/               # Security, DB connections, and config
+│   ├── alembic/                # DB Migrations
+│   └── tests/                  # Pytest suite
+├── frontend/
+│   ├── src/
+│   │   ├── api/                # Axios interceptors & HTTP calls
+│   │   ├── components/         # Reusable UI (Cards, Modals, Badges)
+│   │   ├── features/           # Domain-specific logic
+│   │   └── context/            # Global state (Auth, Theme)
+│   └── nginx.conf              # SPA routing rules for production
+└── docker-compose.yml          # Container orchestration
 ```
 
 ---
 
-## Data Model
-
-| Entity | Notes |
-|---|---|
-| `users` | role ∈ {fleet_manager, driver, safety_officer, financial_analyst} |
-| `vehicles` | status ∈ {available, on_trip, in_shop, retired} |
-| `drivers` | status ∈ {available, on_trip, off_duty, suspended} |
-| `trips` | status ∈ {draft, dispatched, completed, cancelled} |
-| `maintenance_logs` | open record ⇒ vehicle in_shop |
-| `fuel_logs` | liters, cost, date |
-| `expenses` | tolls, misc, per vehicle |
-| `vehicle_documents` | *(bonus)* local volume path, not external storage |
-
-All status fields are Postgres enums, not free-text strings.
-
----
-
-## Team & Ownership
-
-| Engineer | Domain | Owns |
-|---|---|---|
-| **Engineer 01 — Fleet & Access** | Auth, Vehicles, Drivers | `auth.py`, `vehicles.py`, `drivers.py`, all of `models/` & `alembic/` |
-| **Engineer 02 — Dispatch Core** | Trips, Maintenance | `trips.py`, `maintenance.py` (routes + services) |
-| **Engineer 03 — Money & Visibility** | Fuel, Expenses, Dashboard, Reports, DevOps | `fuel.py`, `expenses.py`, `reports.py`, `dashboard.py`, Docker & deploy |
-
-`models/` and Alembic migrations are owned exclusively by Engineer 01 — schema changes go through a request, never a direct edit by another engineer.
-
----
-
-## License
-
-Built for the Odoo Hiring Hackathon. Not licensed for external distribution.
+<div align="center">
+  <p>Built with 🩵 for the Odoo Hiring Hackathon.</p>
+</div>
