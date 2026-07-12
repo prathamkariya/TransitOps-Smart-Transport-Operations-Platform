@@ -1,6 +1,6 @@
- <div align="center">
-  <!-- TODO: Replace the src below with your actual straw-hat.gif path once you have it. The align and width help it fit seamlessly. -->
-  <img src="[./assets/straw-hat.gif](https://tenor.com/view/one-piece-hat-luffy-hat-luffyhat-onepieceluffyhat-gif-6558192108222740508)" width="80" alt="Floating Straw Hat Placeholder" />
+<div align="center">
+  <!-- Using a live animated GIF from Tenor so it works immediately -->
+  <img src="https://tenor.com/view/one-piece-hat-luffy-hat-luffyhat-onepieceluffyhat-gif-6558192108222740508" width="80" alt="Floating Straw Hat" />
 
   <h1>🚀 TransitOps: Smart Transport Operations Platform</h1>
 
